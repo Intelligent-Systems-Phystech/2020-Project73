@@ -37,7 +37,7 @@
     
     In our paper, we extend approach, proposed in \cite{conf/icde/KoutrikaLS15}, by trying to vary the topic models, which are the core of the algorithm. We scrutinize the ARTM (\cite{vorontsov2015additive}, \cite{vorontsov2015bigartm}) approach, which is proved to outperform LDA \cite{blei10lda} in many tasks due to the wide choice of regularizers accessible \cite{voron15mlj}. We compare different types of models, including hierarchical models (\cite{chirkova16hier}, \cite{journals/corr/abs-1811-02820}) with diverse combinations of regularizers, as well as with different text preprocessing methods like terms and bigrams extractions. 
     
-    There is a lot of approaches to model the hierarchical nature of topics. For example, hLDA \cite{journals/jacm/BleiGJ10} presents a way of topical hierarchy as a tree with one parent for each sub-topic, hPAM \cite{oai:works.bepress.com:andrew_mccallum-1189} overcomes this limitation and represents hierarchies as multilevel acyclic graphs, hHDP \cite{journals/jmlr/ZavitsanosPV11} additionally provide ways to estimate the number of levels and number of topics on each level of hierarchy and use multilevel graph model too. In this work, we use hARTM because ща the better results shown in experiments \cite{journals/corr/abs-1811-02820}.
+    There is a lot of approaches to model the hierarchical nature of topics. For example, hLDA \cite{journals/jacm/BleiGJ10} presents a way of topical hierarchy as a tree with one parent for each sub-topic, hPAM \cite{oai:works.bepress.com:andrew_mccallum-1189} overcomes this limitation and represents hierarchies as multilevel acyclic graphs, hHDP \cite{journals/jmlr/ZavitsanosPV11} additionally provide ways to estimate the number of levels and number of topics on each level of hierarchy and use multilevel graph model too. In this work, we use hARTM because of the better results shown in experiments \cite{journals/corr/abs-1811-02820}.
     
     Moreover, we analyze possible drawbacks of the algorithm, proposing extensions to overcome them, e.g., we introduce hierarchical entropy, successfully upgrading accuracy of generality estimation.
     
@@ -287,7 +287,7 @@
     \centering
     \begin{tabular}{|c|c|}
     \hline
-    n & Score\\
+    n & MSE \\
     \hline
     1 & 0.0746\\
     2 & 0.0942\\
@@ -300,7 +300,7 @@
     9 & 0.1011\\
     \hline
     \end{tabular}
-    \caption{Scores of reading orders with LDA w.r.t. n}
+    \caption{MSE values of reading orders with LDA w.r.t. n}
     }
     \end{table}
 	
@@ -310,32 +310,41 @@
 	\caption{Reading Order Graph with PLSA topic model}
 	\end{figure}
 	
-	The sample of the reading order graph with PLSA topic model is shown in Figure 2. The results of experiments for reading orders with monograms topic models are shown in Table 4. Comparing with results from \cite{conf/icde/KoutrikaLS15}, where entropy as the measure of document generality and LDA as thу only topic model were used for English Wikipedia hierarchies of ML categories, we get the better results by approximately one order and reveal that applying LDA and entropy give one of the worst scores.
+	The sample of the reading order graph with PLSA topic model is shown in Figure 2. The results of experiments for reading orders with monograms topic models are shown in Table 4. Comparing with results from \cite{conf/icde/KoutrikaLS15}, where entropy, as the measure of document generality, and LDA, as the only topic model, were used for English Wikipedia hierarchies of ML categories, we got approximately twice better results and revealed that applying LDA and entropy does not give the best score.
     
     \begin{table}[H]
         \centering
         \begin{tabular}{|c|c|c|}
         \hline
-        Topic model & Score & Execution time (sec)\\
+        Topic model & MSE value & Execution time (sec)\\
         \hline
-        LDA & 0.0746 & 7.3 \\
-        \specialcell{hARTM with \\ Hierarchical Entropy} & 0.0745 & 6.8 \\
-        ARTM & 0.0745 & 7.2 \\
-        hARTM & 0.0744 & 9.3 \\
-        PLSA & 0.0741 & 15.2 \\
+        hARTM & 0.07967 & 6.96 \\
+        PLSA  & 0.07969 & 10.1 \\
+        ARTM  & 0.07980 & 6.91 \\
+        \specialcell{hARTM with \\ Hierarchical Entropy} & 0.07983 & 5.71 \\
+        LDA   & 0.07987 & 6.32 \\
+        ARTM with bigrams & 0.07996 & 5.84 \\
+        hARTM with bigrams & 0.0799970277 & 4.75 \\
+        \specialcell{hARTM with bigrams \\ and Hierarchical Entropy} & 0.08018838538 & 2.96 \\
         \hline
         \end{tabular}
         \caption{Results for Machine Learning Catalog of Wikipedia}
     \end{table}
+    
+    \begin{figure}
+    \centering
+	\IncludeGraphics[scale=0.7]{Chart_ML.jpg}
+	\caption{Results for Machine Learning Catalog of Wikipedia}
+	\end{figure}
 	
 	\subsection{Mathematics Catalog of Wikipedia}
-	We tested how our approach and optimal parameters for $\tau$, $k$, $n$ scales with the number of documents. This dataset contains many more articles than the previous one and it was decided to apply bigrams selection and topic models that used them. In Table 5 the results of experiments for reading orders with optimal parameters and different topic models are presented. Unfortunately, we couldn't wait for the algorithm to finish working with the PLSA model and optimal parameters, we estimated the results according to execution times and scores with this topic model for fewer document collections.
+	We tested how our approach and optimal parameters for $\tau$, $k$, $n$ scales with the number of documents. This dataset contains many more articles than the previous one and it was decided to apply bigrams selection and topic models that used them. In Table 5 the results of experiments for reading orders with optimal parameters and different topic models are presented. Unfortunately, we couldn't wait for the algorithm to finish working with the PLSA model and optimal parameters, we estimated the results according to execution times and MSE values with this topic model for fewer document collections.
 	
 	\begin{table}[H]
 	\centering
     \begin{tabular}{|c|c|c|}
     \hline
-    Topic model & Score & Execution time\\
+    Topic model & MSE value & Execution time\\
     \hline
     ARTM with bigrams & 0.003534 & 1h 5min \\
     ARTM & 0.003533 & 2h 28min \\
@@ -358,7 +367,7 @@
 	
 	\section{Conclusion}
 	
-	Overall, as a result of our experiments, we came to the following conclusions: there is scalability for optimal parameters of the algorithm with different topic models. Moreover, it is unnecessary to find the optimal parameters each time you change the topic model of the algorithm. They depend only on the type of entropy that you use. However, scaling does not save the rating of reading orders with different topic models. Although, you can use that reading orders with Hierarchical Entropy has shown better results in both execution time and score, whereas bigrams selection worsens the score of reading order a little bit but reduces execution time in about twice instead.
+	Overall, there is scalability for optimal parameters of the algorithm with different topic models. Moreover, it is unnecessary to find the optimal parameters each time you change the topic model of the algorithm. They depend only on the type of entropy that you use. However, scaling does not save the rating of reading orders with different topic models. Reading orders with PLSA topic model give one of the smallest error but it is applicable only for small document collections because of its long execution time for construction. Hierarchical Entropy improves the quality of reading orders on large document collections (more than 1000 documents). For arbitrary document it is better to use the reading order with hARTM in both execution time and MSE value. Bigrams selection worsens the MSE value of reading order but reduces construction time instead.
 	
 	\bibliographystyle{plain}
 	\bibliography{Mamonov2020Project73}
