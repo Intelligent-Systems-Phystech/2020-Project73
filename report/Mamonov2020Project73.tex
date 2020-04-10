@@ -2,91 +2,363 @@
 \usepackage{jmlda}
 \title
 %    [Нелинейное ранжирование результатов разведочного информационного поиска] % Краткое название; не нужно, если полное название влезает в~колонтитул
-{Нелинейное ранжирование результатов разведочного информационного поиска.}
+{Topic Models Selection for Reading Orders Generation over Document Collections}
 \author
 %    [Мамонов~К.\,Р.] % список авторов для колонтитула; не нужен, если основной список влезает в колонтитул
-{Мамонов~К.\,Р.,  Воронцов~К.\,В., Еремеев~М.\,А.} % основной список авторов, выводимый в оглавление
-[Мамонов~К.\,Р.$^1$, Воронцов~К.\,В.$^1$, Еремеев~М.\,А.$^1$] % список авторов, выводимый в заголовок; не нужен, если он не отличается от основного
-\thanks
-%    {Работа выполнена при финансовой поддержке РФФИ, проект \No\,00-00-00000.
-%   Научный руководитель:  Стрижов~В.\,В.
-{Задачу поставил:  Воронцов~К.\,В.
-	 Консультант:  Еремеев~М.\,А.}
+{Mamonov~K.\,R.,  Vorontsov~K.\,V., Eremeev~M.\,A} % основной список авторов, выводимый в оглавление
 \email
 {mamonov.kr@phystech.ru, vokov@forecsys.ru, maks5507@yandex.ru}
 \organization
-{$^1$ Московский физико-технический институт, Москва, Россия}%; $^2$Организация}
+{Moscow Institute of Physics and Technology}%; $^2$Организация}
 \abstract
-{Имея коллекцию документов, пользователю порой очень сложно в них разобраться. Существует множество подходов для поиска среди этих документов, но их недостаточно, когда пользователь хочет получить доступ к соответствующим документам в некотором логическом порядке, например, для учебных целей. В данной работе описан алгоритм ранжирования документов от простого к сложному, от общего к частному, то есть в том порядке, в котором пользователю будет легче разбираться в новой для него тематической области. Данный подход даёт пользователю абсолютно новый способ потребления контента.
+{ This paper investigates an effect of Topic Models Selection on the algorithm that automatically organizes a collection of documents in a tree from general to more specific documents, and allows a user to choose a reading sequence over the documents. We evaluate the impact of ARTM technique and its variations, hierarchical ARTM and multimodal ARTM, on the algorithm. Such alterations enhance the overall quality as well as improving the efficiency of the algorithm. We study new approaches in measuring document generality, featuring new metric named hierarchical entropy. The experiments were conducted with Russian Wikipedia hierarchies of categories in Mathematics and Machine Learning. The problem to solve gives a novel way to content consumption that is significant for learning or editorial purposes.
 	
 	\bigskip
-	\textbf{Ключевые слова}: \emph {граф чтения, тематическое моделирование, информационный поиск}.}
-\titleEng
-{JMLDA paper example: file jmlda-example.tex}
-\authorEng
-{Author~F.\,S.$^1$, CoAuthor~F.\,S.$^2$, Name~F.\,S.$^2$}
-\organizationEng
-{$^1$Organization; $^2$Organization}
-\abstractEng
-{This document is an example of paper prepared with \LaTeXe\
-	typesetting system and style file \texttt{jmlda.sty}.
-	
-	\bigskip
-	\textbf{Keywords}: \emph{keyword, keyword, more keywords}.}
+	\textbf{Keywords}: \emph {reading trees generation, reading sequence, probabilistic topic modeling }.}
+
 \begin{document}
 	
 	\maketitle
 	
-	\section{Введение}
-	В связи с последними научными достижениями, особенно развитием интернета, многократно возрос объем текстовой информации, которую приходится обрабатывать человеку. Все более актуальной становится проблема ранжирования информации для более понятной и быстрой её обратоки и понимания.
+	\section{Introduction}
+    While simple search engines like Google or Yahoo rank search results based on the relevance to the provided query. That requires the user to know the area and be able to formulate the query using specific terms. As for users wanting to explore the new topic, this kind of search and ranking approaches do not work effectively.
+    
+    Exploratory search (\cite{white09exploratory}, \cite{marchionini06exploratory}) is a paradigm of information retrieval, in which the user intends to learn the subject domain better. As the user does not know the main concepts of the domain, he needs a hint which of the found documents to read first, gradually moving from simple to more complex documents. 
+    
+    Reading order optimization is an alternative way to content consumption that departs from the typical ranked lists of documents based on their relevance. Given a document collection, existing systems allow users to browse the collection or perform searches that return lists of documents ranked based on their relevance to the user query. While these approaches work fine when a user is trying to locate specific documents, they are insufficient when users need to access the pertinent documents in some logical order, for example, for learning or editorial purposes. Such a ranking technique helps to achieve more accurate processing of information significantly faster. 
+    
+    Actually, this problem is not widely covered in literature. Attempts to convert document collection into some meaningful structure have already been in \cite{journals/tkdd/ShahafG12} and \cite{conf/cikm/FengA09}, but this approaches applicable only for specified document collections, whereas our aim is to develop a method for arbitrary collections; nevertheless, \cite{conf/icde/KoutrikaLS15} explores the possible solution to this problem, which we elaborate in this paper. The proposed algorithm is based on the more flexible clustering techniques than used previously in label tree learning methods( \cite{conf/nips/BengioWG10}, \cite{conf/icpr/LiuCSTN12}, \cite{conf/webi/LiuT10}) and vector representations of documents, obtained by topic modeling \cite{hofmann1999probabilistic}. Authors suppose the reading order is not a list, but a set of trees. Indeed, when exploring the topic, users sometimes have to make a decision of what subarea to dive into, as the amount of information is vast. 
+    
+    Applications, such as automatic curriculum generation, are discussed in \cite{kisla13course} and \cite{pirrone05learning}; however, they do not provide any scalable solutions, only tailored variations. 
+    
+    Multiple approaches on counting models generality and complexity were proposed in \cite{eremeev19ranlp} and \cite{solovyev18assessment}. In order to solve the problem, they count simple characteristics and sort the documents by them. For instance, the complexity of the document can be calculated effectively (\cite{eremeev19ranlp}), but sorting does not provide tree structure, plain lists only.
+    
+    \cite{jardine14automatically} explores methods of deriving base documents using variations of PageRank (\cite{dode17textrank}) algorithm. The proposed methods are query-based, meaning that the user has to provide a query to get a sorted list of documents. Algorithms cannot be applied to sort arbitrary document collection, without a given query. 
+    
+    In our paper, we extend approach, proposed in \cite{conf/icde/KoutrikaLS15}, by trying to vary the topic models, which are the core of the algorithm. We scrutinize the ARTM (\cite{vorontsov2015additive}, \cite{vorontsov2015bigartm}) approach, which is proved to outperform LDA \cite{blei10lda} in many tasks due to the wide choice of regularizers accessible \cite{voron15mlj}. We compare different types of models, including hierarchical models (\cite{chirkova16hier}, \cite{journals/corr/abs-1811-02820}) with diverse combinations of regularizers, as well as with different text preprocessing methods like terms and bigrams extractions. 
+    
+    There is a lot of approaches to model the hierarchical nature of topics. For example, hLDA \cite{journals/jacm/BleiGJ10} presents a way of topical hierarchy as a tree with one parent for each sub-topic, hPAM \cite{oai:works.bepress.com:andrew_mccallum-1189} overcomes this limitation and represents hierarchies as multilevel acyclic graphs, hHDP \cite{journals/jmlr/ZavitsanosPV11} additionally provide ways to estimate the number of levels and number of topics on each level of hierarchy and use multilevel graph model too. In this work, we use hARTM because ща the better results shown in experiments \cite{journals/corr/abs-1811-02820}.
+    
+    Moreover, we analyze possible drawbacks of the algorithm, proposing extensions to overcome them, e.g., we introduce hierarchical entropy, successfully upgrading accuracy of generality estimation.
+    
+	\section{Problem statement}
+	A reading graph $R(V, E)$ over a document set $D$ is a directed acyclic graph whose nodes correspond to the input documents and edges capture specificity relations among the documents. In particular, a node $v_i \in V$ maps a non-empty set $D_i \subseteq D$ of equivalent documents. An edge $v_i \rightarrow v_j$ between nodes $v_i$ and $v_j$ signifies that documents belonging to the corresponding document set $D_i$ precede documents belonging to the respective set $D_j$.
 	
-	Предлагается алгоритм построения графа чтения по статьям Википедии \cite{WikiPedia} с применением методов тематичесского моделирования.
+	A complete reading tree over a document set $D$ is a reading graph $R(V, E)$ with the following properties:
 	
-	Тематические модели широко используются на практике для решения задач ранжирования документов. Одним из продвинутых инструментов в тематическом моделировании является библиотека BigARTM~\cite{vorontsov2015bigartm}. Она предоставляет широкий выбор для настройки модели, используя обширный класс регуляризаторов. 
+	(a) For each node $v_i \in V$ with $D_i$ being its corresponding set of documents, it holds that: a document $d \in D$ maps to $v_i \Leftrightarrow d \leftrightarrow d_i$ , for all $d_i \in Di.$
 	
-	\section{Постановка задачи}
-	Текущий подход к построению подобных графов описан в работе \cite{conf/icde/KoutrikaLS15}. Сначала проводится предобработка текстов --- удаляются стоп-слова и другой шум, все слова приводятся к начальной форме и строится матрица документ-слово. Затем данная матрица переводится LDA алгоритмом\cite{blei2003latent} в матрицу документ-тема и происходит колибровка тематической модели. после этого из полученной матрицы строится частичный порядок документов коллекции и дерево чтения в целом.
+	(b) For each pair of nodes $v_i, v_j \in V$ with $D_i$ and $D_j$ being their sets of documents, and an edge $v_i \rightarrow v_j$ , it holds that: For each pair of documents $d_i \in D_i$ and $d_j \in D_j$ , it is $d_i\rightarrow d_j.$
 	
-	Узким местом являются тематические модели. Мы предлагаем применить для них алгоритм BigARTM\cite{vorontsov2015bigartm}, вместо LDA\cite{blei2003latent}, построить мультимодальную тематическую модель \cite{Ianina2016} и использовать в качестве меры общности не энтропию, а долю терминов с узким распределением $p(w|t)$ .
+	(c) For each pair of nodes $v_i, v_j \in V$ with $D_i$ and $D_j$ being their sets of documents, and an edge $v_i\rightarrow v_j$ , it holds that: there is no other node $v_k$, such that: $v_i \rightarrow v_k \rightarrow v_j.$
 	
-	Был взят набор текстовых коллекций Википедии $\mathfrak{D} = \left\{D_i\right\}_{i=1}^{N}$, где каждая коллекция $D$ состоит из документов $d$, словари коллекциий текстов $W$, состоящих из термов $w$, и множества тем $T$, состоящих из тем  $t$.
+	A reading sequence $d_{m1} \rightarrow d_{m2} \ldots \rightarrow d_{mk}$ of documents $d_{mi} \in D, i = 1 \ldots k$, maps to a path $v_{l1} \rightarrow v_{l2} \ldots \rightarrow v_{lk}$ on the graph with $v_{li} \in V, i = 1 \ldots k$ such that $d_{mi} \in D_{li}$ of node $v_{li}, i = 1 \ldots k.$
 	
-	Распределение вида $p(t|x)$ будем называть тематикой объекта x. Можно говорить о тематике документа $p(t|d)$, терма $p(t|w)$, терма в документе $p(t|d, w)$.
+	In order to compare and evaluate the reading graph, we need a way to compare trees. Edit distance metrics, initially introduced for string comparison, have been used to compare ordered trees \cite{Tanaka88b}. Ordered labeled trees are trees in which the left-to-right order among siblings is significant. A distance between two trees is computed by considering an optimal mapping between two trees as the minimum cost of a sequence of elementary operations that converts one tree into the other. An alternative to mapping and tree edition is tree alignment \cite{JWZ94}. 
 	
-	Целью нелинейного ранжирования  является построение частичного порядка на коллекции документов $D$, в частности, это может быть совокупность деревьев (лес документов). Для этого строится тематичесская модель и для каждого документа находится вероятность того, что документ $i$ принадлежит теме $j$, так получается матрица $\theta_{ij}= p(t|d)$. По ней можно для каждого документа посчитать меру общности документа $g(d_i) = \sum\limits_{m} -F_{im}log(F_{im}) $ и меру пересеченния двух документов $o(d_i, d_j) = \frac{F_i\cdot F_j}{|F_i^2|+|F_j^2| - F_i\cdot F_j},$ которые отражают сложность документов и позволяют построить матрицу смежности $A$ требуемого графа.
-	
-	Критерием качества $S$ нашего алгоритма будем считать величину обратную к среднеквадратичному отклонению между двумя матрицами смежности графов чтения. Эталонные графы с матрицей смежности $\hat{A}$ построим из категорий Википедии. Цель данной работы состоит в решении следующей задачи:
+	Our reading order problem is different, and thus we are not interested in how identical two trees are. We care for the relative ordering of each pair of documents. To quantify the tree difference based on the pairwise document orderings, we first build the adjacency matrix A for a tree structure using the following formula:
 	
 	\begin{equation}
-	\sum\limits_{i,j = 1}^n(A_{ij}-\hat{A_{ij}})^2\rightarrow \min_{\mathfrak{D}}
+    A_{ij} = 
+    \begin{cases}
+    \frac{1}{num_{hops}(d_i \rightarrow d_j)} &\text{if there is a directed path $d_i \rightarrow d_j$}\\
+    0 &\text{otherwise}
+    \end{cases}
+    \end{equation}
+    
+    To measure the difference of two tree structures over a set of documents represented by matrixes $A$ and $\hat{A}$, we use the mean squared error (MSE), which is defined as:
+    
+    \begin{equation}
+	\frac{1}{n} \sum\limits_{i,j = 1}^n(A_{ij}-\hat{A_{ij}})^2
 	\end{equation}
 	
-	%\begin{State}
-	%    Мотивации и~интерпретации наиболее важны для понимания сути работы.
-	%\end{State}
+	\section{Model Relationships Between Documents}
 	
-	%\begin{Theorem}
-	%    Не~менее $90\%$ коллег, заинтересовавшихся Вашей статьёй,
-	%    прочитают в~ней не~более~$10\%$ текста.
-	%\end{Theorem}
-	%
-	%\begin{Proof}
-	%    Причём это будут именно те~разделы, которые не содержат формул.
-	%\end{Proof}
-	%
-	%\begin{Remark}
-	%    Выше показано применение окружений
-	%    Def, Theorem, State, Remark, Proof.
-	%\end{Remark}
+	\subsection{Topic Modeling}
+	    As described above, the foundation of the algorithm is document embeddings, i.e., semantic vector representations \cite{meysam17word}. Probabilistic topic modeling \cite{hofmann1999probabilistic} is a technique used to build the probabilistic document embeddings with the interpretive components. Each component $i$ of the document $d$ representation is considered the probability of the document $d$ belonging to the topic $i$. Hence, the topic model simultaneously calculates document embeddings and performs soft clustering. 
+
+        Topic modeling central assumption is that the probability of the word $w$ occurs in the document $d$: 
+        \begin{equation}
+            p(w \mid d) = \sum\limits_{t \in T} p(w \mid t)p(t \mid d) = \sum\limits_{t \in T} \phi_{wt}\theta_{td}
+        \end{equation}
+        where matrix $\Phi$ contains distributions of word $w$ in document $d$ ($\phi_{wt}$), and matrix $\Theta$ -- probabilities $\theta_{td}$ of topic $t$ occurs in document $d$. $T$ is the total number of topics in the model. \\ 
+        
+        The primary model proposed in \cite{hofmann1999probabilistic} is \textbf{Probabilistic Latent Semantic Analysis (PLSA)} obtains the solutions matrices by maximizing the likelihood:
+        
+        \begin{equation}
+            L(\Phi, \Theta) = \sum\limits_{d \in D}\sum\limits_{w \in d} n_{wd} \log p(w \mid d) \rightarrow \max_{\Phi, \Theta}
+        \end{equation}
+        
+        With the constraints on $\Phi$ and $\Theta$:
+        
+        \begin{equation}
+            \sum\limits_{w \in W} \phi_{wt} = 1, \phi_{wt} \geq 0
+        \end{equation}
+
+        \begin{equation}
+            \sum\limits_{t \in T} \theta_{td} = 1, \theta_{td} \geq 0
+        \end{equation}
+
+        Such an optimization problem can be successfully solved with EM algorithm. \\
+        
+        Later, \cite{blei2003latent} introduced the Bayesian approach to extend the PLSA by adding the prior distributions to the and matrices. This approach is called \textbf{Latent Dirichlet Allocation (LDA)} and acknowledged the state-of-the-art method. \cite{conf/icde/KoutrikaLS15} uses the LDA model in their experiments. \\
+        
+        \textbf{Additive Regularization of Topic Models (ARTM)} scrutinized in \cite{vorontsov2015additive}, \cite{voron15multimodal} and \cite{voron15mlj} brought vast diversity into topic modeling techniques.
+        
+        Still aiming to solve the mentioned earlier optimization problem, ARTM uses regularizers to manage the topic model quality, and, therefore, the optimization problem has the form:
+        
+        \begin{equation}
+            L(\Phi, \Theta) + \sumR(\Phi, \Theta) \rightarrow \max_{\Phi, \Theta}
+        \end{equation}
+        
+        Although there are many useful regularizers, the following three are the most widely used ones:
+        
+        \begin{enumerate}
+            \item Sparsity $\Phi$: In order to make the $\phi_{wt}$ distributions more sparse, the sparsity regularizer is used. Having the following form:  $R(\Phi) = \sum\limits_{t \in T}\sum\limits_{w \in W} \beta_{wt}\log \phi_{wt}$, it makes each topic to contain lesser number of tokens from the vocabulary, making them, therefore, more distinct. The only parameter $\beta$ is to be set up. \\
+            
+            \item Sparsity $\Theta$: Alike the $\Phi$ sparsity, the $\Theta$ sparsity regularizer ensures each document belongs to fewer topics. Formally, $R(\Theta) = \sum\limits_{d \in D}\sum\limits_{t \in T} \alpha_{td}\log \theta_{td}$.
+            
+            \item Decorrelation: To make topic even more diverse, thus, increasing the model's value, the regularizer $R = -\frac{\tau}{2}\sum\limits_{t \in T}\sum\limits_{s \in T\\t}\sum\limits_{w \in W} \phi_{wt}\phi_{ws}$
+        \end{enumerate}
+        
+        The regularizers can be combined to acquire more precise and valuable models. Important indicators of the model's quality are $\Phi$ and $\Theta$ sparsity values. However, the interpretability of topics is the most accurate measure, which cannot be estimated analytically, only by assessors. \\
+        
+        In addition, ARTM brings new methods in handling the meta data. Modalities are various parts of text besides raw words (e.g. authors, terms, collocations), and their extraction can help in building a better model. \\
+        
+        \textbf{Multimodal ARTM} solves the following optimization problem with old constraints:
+        
+        \begin{equation}
+            \sum\limits_{m} L_{m}(\Phi_{m}, \Theta) + \sumR(\cup_{m}\Phi_{m}, \Theta) \rightarrow \max_{\Phi, \Theta}
+        \end{equation}
+        where $m$ stands for different modalities can be obtained from the texts or their meta data. \\
+        
+        Finally, the \textbf{Hierarchical ARTM (hARTM)} allows combining two or more distinct ARTM models for each level of the hierarchy, linked with each other. To tailor next-level topics to the topics of the previous level, the regularizer, discussed in \cite{chirkova16hier} is used. 
+        
+        \begin{equation}
+            R = \tau \sum\limits_{t \in T}\sum\limits_{w \in W} n_{wt} \log \sum\limits_{s \in S} \phi_{ws}\psi_{st}
+        \end{equation}
+        where $T$ is the number of topics on the previous level, $S$ - number of topics on the next level. $\Psi$ is the stochastic matrix, consisting of probabilities of next-level topics in previous-level ones, which is obtained by solving the following problem:  
+    
+        \begin{equation}
+            \sum\limits_{t \in T} n_t KL_w\left( \frac{n_wt}{n_t} \mid\mid \sum\limits_{s \in S} \phi_{ws} \psi_{st} \right) \rightarrow \max_{\Phi, \Psi}
+        \end{equation}
+        
+        The regularizer ensures that each previous-level topic is the convex sum of the next-level topics, while the $\Psi$ matrix can be valuable in further applications. All regularizers and modalities extensions are applicable to the hARTM models. \\
+        
+        In our paper, we compare all of these models in terms of their performance in building reading orders.
 	
+	\subsection{Generality}
 	
-	%\section{Заключение}
+	When choosing what to read when starting to explore the novel topic, it is preferable to start with general documents, covering basic terms and ideas of the domain. Measuring generality is the primary problem in reading orders generation.
 	
-	%Желательно, чтобы этот раздел был, причём он не~должен дословно повторять аннотацию.
-	%Обычно здесь отмечают,
-	%каких результатов удалось добиться,
-	%какие проблемы остались открытыми.
+	\textit{Entropy.} We can measure the document generality based on the document’s entropy over the topics \cite{conf/icde/KoutrikaLS15}. The basic intuition behind the entropy is that the higher a document’s entropy is, the more topics the document covers hence the more general it is. Using the Shannon entropy, the generality score $g(d)$ of document $d$ is computed as follows:
 	
+	\begin{equation}
+	g(d) = -\sum\limits_{t \in T} \theta_{td}log(\theta_{td})
+	\end{equation}
+	
+	\textit{Hierarchical entropy.} The entropy value has a significant problem that makes it unstable: if the document includes tailored topics from different domains, then its entropy is large, whereas the document is not general. A view of the chart of this entropy on a document collection is shown in Figure 1.
+	
+	\begin{figure}
+        \centering
+    	\IncludeGraphics[scale=0.5]{Entropy.jpg}
+    	\caption{Hierarchical entropy on a document collection}
+	\end{figure}
+	
+	Using hierarchical topic models alleviates this problem. We introduce a hierarchical entropy, that can be calculated using a two-level hierarchical model. Hence, each document $d$ has two embeddings -- $\theta^1_d$ and $\theta^2_d$ on first and second level respectively.
+	
+	Consider the document $d$ is fixed. Let's denote the $h_{st} = - \psi_{st} \times \theta^2_sd \times \log \theta^2_sd$ -- element of classical entropy of the second-level topic vector multiplied by the probability of the second-level topic $s$ in the first-level topic $t$. Thus, obtain the matrix $H$.
+	
+	Finally, the hierarchical entropy score is a convolution of the matrix with first-level document embedding:
+	
+	\begin{equation}
+	    g_h(d) = -\sum\limits_{t \in T} \theta^1_{td} \sum\limits_{s \in S} \psi_{st} \theta^2_{sd} \log \theta^2_{sd}
+	\end{equation}
+	
+	Such score is more stable in terms of above-mentioned example. Its effect is explored in the experiments.
+	
+	\subsection{Distance}
+	
+	Distance is the second vital parameter in reading order construction. It defines what documents could be read at the same time independently and what documents are not equal and should be read one after the other.
+	
+	\textit{Document overlap.} The overlap of two documents can be computed as their weighted Jaccard score\cite{Grefenstette94}. The weighted Jaccard extends the classic Jaccard index, which is defined as the size of the intersection divided by the size of the union of the topic sets assigned to each document, by taking into account their topic probabilities. The overlap score can be computed as follows:
+	
+	\begin{equation}
+	o(d_i, d_j) = \frac{\theta_{td}^i\cdot \theta_{td}^j}{|\theta_{td}^i|^2+|\theta_{td}^j|^2 - \theta_{td}^i\cdot \theta_{td}^j}
+	\end{equation}
+	
+	\section{Computational Experiment}
+	
+	\subsection{Data}
+	
+	We use Russian Wikipedia documents and  hierarchy of categories to fit and validate our models. Both the Wikipedia texts and categories descriptions are accessible through the Wikimedia Resource. However, the categories hierarchy in Wikipedia is neither the tree nor the set of trees. It is a connected acyclic graph, meaning that from any category we can reach any other. 
+	
+	Since we need the trees only, we use Depth Full Search (DFS) algorithm with limited depth to construct trees fitting our needs. 
+	
+	To validate the model we use the tree with the <<Mathematics>> as root category and depth 8, containing 9500 documents. On this set, all topic models were fitted and trees validated.
+	Additionally, to compare our results with the initial \cite{conf/icde/KoutrikaLS15}, and explore the scalability of tuned hyperparameters, we gathered the tree with the root of <<Machine Learning>> and depth 5. 
+	
+	\subsection{Data processing}
+	
+	Several steps of processing were performed: we lemmatized the documents, all formulas were replaced with special <<FORMULA>> token.
+	
+	Moreover, to try the multimodal ARTM, we extracted bigrams from the texts via the TopMine algorithm (\cite{kishky14topmine}).
+	
+	\subsection{Topic models construction}
+	For words from this collection, there were constructed four topic models: LDA, ARTM, PLSA, Hierarchical ARTM. After that, each article was divided into bigrams and monograms and submitted for input to ATM and Hierarchical ARTM. Overall, six topic models were designed with Sparsity $\Phi$ and Sparsity $\theta$ that are shown in Table 1
+	
+	\begin{table}[H] 
+	\begin{center}
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    Type & Sparsity $\theta$ & \specialcell{Sparsity $\Phi$ \\ for monograms} & \specialcell{Sparsity $\Phi$ \\ for bigrams}\\
+    \hline
+    LDA & 0.76 & 0.93 & -\\
+    ARTM & 0.77 & 0.93 & -\\
+    PLSA & 0.74 & 0.93 & - \\
+    hARTM & 0.87 & 0.95 & - \\
+    ARTM with bigrams & 0.82 & 0.90 & 0.75 \\
+    \specialcell{hARTM \\ with bigrams} & 0.90 & 0.93 & 0.81\\
+    \hline
+    \end{tabular}
+    \caption{\label{tab:canonsummary}Topic models scores}
+    \end{center}
+    \end{table} 
+	
+	\subsection{Reading Tree Generation}
+	The tree generation process progressively weaves the reading order for a set of documents by determining the specificity relations among the documents. It takes as input the set of documents, the document-topic assignments $F$, and two parameters: $\tau$ , which defines the minimum overlap between two equivalent documents, and $k$, which defines the maximum difference of their generality scores, $n$, which defines the dynamic decline of $\tau$ during algorithm execution. All parameters are used to define the specificity relations. We use the formulas (11) and (13) for computing document generality and overlap, respectively, but the algorithm is really independent of how document overlap and generality are estimated.
+	
+	The algorithm builds a complete reading tree in an iterative way\cite{conf/icde/KoutrikaLS15}. At each round, it handles a subset of similar documents that need to be connected to the tree already created. The algorithm’s intention is to grow a sub-tree out of this set of documents and connect it to the existing tree. For this purpose, it first creates the root of this new sub-tree by putting together the most general documents from the set in consideration that are also equivalent. The remaining documents of this set are clustered such that they have some overlap with the root and among them. Each cluster becomes a new set of documents out of which the algorithm will further create new nodes and edges. This process repeats until no more tree growing is possible and there are no documents unprocessed. Initially, the set of documents under consideration contains all documents and the current root node is a dummy node.
+	
+	\begin{algorithm}
+    \caption{Get Order}
+    \begin{algorithmic}[1]
+    
+    \Procedure{GetOrder}{doc set $D$, doc-topic matrix $F$, generality difference threshold $k$, overlap threshold $\tau$, expansion node $v_r$}
+    \While{$D \not= 0$}
+        \State 1. Create a set $S$ containing the most general $d$ in $D$
+        \State 2. Select the next most general document $d_j$ in $D$
+        \While{$o(d, d_i) > \tau$ and $g(d) - g(d_j) < k$}
+            \If{$o(d, d_i) > \tau$} add $d_j$ to $S$\EndIf
+            \State Select the next most general document $d_j$ in $D$
+        \EndWhile
+        \State 4. $S$ contains the most general equivalent documents
+        \State and it is mapped to a new node $v_s$
+        \State 5. Connect node $v_s$ to the expansion node $v_r$
+        \State 6. Remove from $D$ all documents belonging to $S$
+        \State 7. $C \leftarrow \{ d_j \in D | o(d, d_j ) > 0 \}$
+        \State 8. Divide $C$ into clusters $D_c$ s.t.: 
+        \State for each $D_c$ it holds $o(d_i, d_j ) > 0, \forall d_i, d_j \in D_c$
+        \ForAll{cluster $D_c$}
+            \State GetOrder$(D_c, F, k, \frac{\tau}{n}, v_s)$
+        \EndForAll
+    \end{algorithmic}
+    \end{algorithm}
+	
+	The algorithm starts by computing the generality score for each input document $g(d_i).$ All documents are then ordered in descending order of their generality score. A dummy node is created and this node becomes the root of the tree. It is also the first node from where the tree will start to expand (called expansion node). The core operations of the algorithm are described as the function \textit{GetOrder}, which is executed repeatedly but for a different subset of the input documents and growing the tree from a different expansion node each time. Its objective is to build a tree out of its input documents and connect it to the expansion node $v_r$. Steps 1-4 are responsible for the creation of the root node of this tree. This node, $v_s$, groups the more general documents from the current set of documents that have the required topic overlap and generality closeness based on the equivalence condition.
+	
+	To build this node, the process starts with the most general document $d$. Subsequently, it considers documents in descending order of generality. As long as a document $d_j$ has a close generality score to $d$, and its overlap with all the documents already selected for the node $v_s$ satisfies the equivalence criterion, this document $d_j$ is also added to the set of documents for the node $v_s$. The node $v_s$ becomes the root node for the remaining documents in the current set and it is connected to the node $v_r$ at step 5. 
+	
+	The remaining steps are responsible for re-organizing the rest of the documents in groups such that each group will be used to further grow the tree in a different direction. Step 7 creates a set $C$ of all documents that have non-zero overlap with at least the most general document $d$ of the node $v_s$ just created. The reason is that any document in any node at any level under $v_s$ should have even a distant relation to the documents of $v_s$. Step 8 clusters $C$ into sets $D_c$, such that the documents contained in each set have non-zero overlap among them. The reason is that the nodes of a tree should have some relatedness. The node $v_s$ becomes the new expansion node. The function \textit{GetOrder} is called for each set $D_c$ to grow a new reading tree. Each of these trees is connected to $v_s$.
+	
+	For simplicity in presentation, Algorithm 1 shows the case of constructing one reading tree. The algorithm builds more than one tree if required. The critical point is the output of step 7. If this is an empty set but there are still documents whose reading order has not been determined, then the algorithm starts a new set of rounds building a new tree that is connected to the dummy root node for the remaining documents.
+	
+	\section{Results of Experiments}
+	
+	\subsection{Machine Learning Catalog of Wikipedia}
+	Due to the small size of this dataset, it could be used for parameter selection. In Table 2 the optimal parameters are shown. There was revealed that optimal parameters depend only on Entropy Type instead of Topic model as we assumed, also parameter $n$ is not mostly useful in the algorithm. Moreover, having optimal parameters $\tau$ and $k$ and changing value of parameter $n$, mostly the quality of the constructed reading order does not depend on $n$ when it is less than one, whereas the greater than one value could have adversely affect on the score, for example, Table 3 shows the dependence of the quality of the constructed reading order with LDA topic model with respect to the $n$ parameter value for optimal parameters $\tau$ and $k$. 
+	
+	\begin{table}[H]
+    \parbox{.40\linewidth}{
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+     & Entropy & \specialcell{Hierarchical \\ Entropy}\\
+    \hline
+    $\tau$ & 0 & 0.1\\
+    $k$ & 0 & 0\\
+    $n$ & 1 & 1\\
+    \hline
+    \end{tabular}
+    \caption{Optimal parameters}
+    }
+    \hfill
+    \parbox{.60\linewidth}{
+    \centering
+    \begin{tabular}{|c|c|}
+    \hline
+    n & Score\\
+    \hline
+    1 & 0.0746\\
+    2 & 0.0942\\
+    3 & 0.0911\\
+    4 & 0.1012\\
+    5 & 0.0917\\
+    6 & 0.0898\\
+    7 & 0.1066\\
+    8 & 0.1012\\
+    9 & 0.1011\\
+    \hline
+    \end{tabular}
+    \caption{Scores of reading orders with LDA w.r.t. n}
+    }
+    \end{table}
+	
+	\begin{figure}
+    \centering
+	\IncludeGraphics[scale=0.4]{Graph.jpg}
+	\caption{Reading Order Graph with PLSA topic model}
+	\end{figure}
+	
+	The sample of the reading order graph with PLSA topic model is shown in Figure 2. The results of experiments for reading orders with monograms topic models are shown in Table 4. Comparing with results from \cite{conf/icde/KoutrikaLS15}, where entropy as the measure of document generality and LDA as thу only topic model were used for English Wikipedia hierarchies of ML categories, we get the better results by approximately one order and reveal that applying LDA and entropy give one of the worst scores.
+    
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|c|c|c|}
+        \hline
+        Topic model & Score & Execution time (sec)\\
+        \hline
+        LDA & 0.0746 & 7.3 \\
+        \specialcell{hARTM with \\ Hierarchical Entropy} & 0.0745 & 6.8 \\
+        ARTM & 0.0745 & 7.2 \\
+        hARTM & 0.0744 & 9.3 \\
+        PLSA & 0.0741 & 15.2 \\
+        \hline
+        \end{tabular}
+        \caption{Results for Machine Learning Catalog of Wikipedia}
+    \end{table}
+	
+	\subsection{Mathematics Catalog of Wikipedia}
+	We tested how our approach and optimal parameters for $\tau$, $k$, $n$ scales with the number of documents. This dataset contains many more articles than the previous one and it was decided to apply bigrams selection and topic models that used them. In Table 5 the results of experiments for reading orders with optimal parameters and different topic models are presented. Unfortunately, we couldn't wait for the algorithm to finish working with the PLSA model and optimal parameters, we estimated the results according to execution times and scores with this topic model for fewer document collections.
+	
+	\begin{table}[H]
+	\centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+    Topic model & Score & Execution time\\
+    \hline
+    ARTM with bigrams & 0.003534 & 1h 5min \\
+    ARTM & 0.003533 & 2h 28min \\
+    LDA & 0.003533 & 2h 28min \\
+    hARTM with bigrams & 0.003532 & 42min \\
+    hARTM & 0.003531 & 1h 8min \\
+    \specialcell{hARTM with bigrams \\ and Hierarchical Entropy} & 0.003529 & 22min \\
+    \specialcell{hARTM with \\ Hierarchical Entropy} & 0.003528 & 38min \\
+    PLSA (estimation) & 0.003510 & 3\cdot 10^8 min \\
+    \hline
+    \end{tabular}
+    \caption{Results for Mathematics Catalog of Wikipedia}
+	\end{table}
+	
+	\begin{figure}
+    \centering
+	\IncludeGraphics[scale=0.7]{Chart_Math.jpg}
+	\caption{Results for Mathematics Catalog of Wikipedia}
+	\end{figure}
+	
+	\section{Conclusion}
+	
+	Overall, as a result of our experiments, we came to the following conclusions: there is scalability for optimal parameters of the algorithm with different topic models. Moreover, it is unnecessary to find the optimal parameters each time you change the topic model of the algorithm. They depend only on the type of entropy that you use. However, scaling does not save the rating of reading orders with different topic models. Although, you can use that reading orders with Hierarchical Entropy has shown better results in both execution time and score, whereas bigrams selection worsens the score of reading order a little bit but reduces execution time in about twice instead.
 	
 	\bibliographystyle{plain}
 	\bibliography{Mamonov2020Project73}
@@ -95,4 +367,23 @@
 	%\ACCEPTNOTE
 	%\AMENDNOTE
 	%\REJECTNOTE
+	
+	
+% 	\begin{State}
+% 	    Мотивации и~интерпретации наиболее важны для понимания сути работы.
+% 	\end{State}
+	
+% 	\begin{Theorem}
+% 	    Не~менее $90\%$ коллег, заинтересовавшихся Вашей статьёй,
+% 	    прочитают в~ней не~более~$10\%$ текста.
+% 	\end{Theorem}
+	
+% 	\begin{Proof}
+% 	    Причём это будут именно те~разделы, которые не содержат формул.
+% 	\end{Proof}
+	
+% 	\begin{Remark}
+% 	    Выше показано применение окружений
+% 	    Def, Theorem, State, Remark, Proof.
+% 	\end{Remark}
 \end{document}

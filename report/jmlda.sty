@@ -68,6 +68,12 @@
 %\RequirePackage{dblfloatfix}  %% никакого эффекта!
 %\RequirePackage{cuted}  %% генерируется ошибка
 
+\usepackage[margin=1.5in]{geometry}    % For margin alignment
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
 \renewcommand{\baselinestretch}{1}
 
 \renewcommand{\thesubfigure}{\textit{\asbuk{subfigure}}}
@@ -128,7 +134,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Языковые настройки
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand{\ruseng}[2]{\iflanguage{russian}{#1}\relax\iflanguage{english}{#2}\relax}
+\newcommand{\ruseng}[2]{\iflanguage{russian}{#2}\relax\iflanguage{english}{#1}\relax}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Оформление заголовков статей
